@@ -6,11 +6,11 @@ const bodyParser = require('body-parser')
 const app = express().use(bodyParser.json()) // creates express http server
 const request = require('request')
 require('dotenv').config()
+
 const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN
 // Sets server port and logs message on success
 app.listen(process.env.PORT || 1337, () => console.log('webhook is listening'))
 
-console.log('PAGE_ACCESS_TOKEN', process.env.PAGE_ACCESS_TOKEN)
 // Sends response messages via the Send API
 function callSendAPI (sender_psid, response) {
   // Construct the message body
@@ -44,6 +44,34 @@ function handleMessage (sender_psid, received_message) {
     // Create the payload for a basic text message
     response = {
       text: `You sent the message: "${received_message.text}". Now send me an image!`
+    }
+  } else if (received_message.attachments) {
+    // Gets the URL of the message attachment
+    const attachment_url = received_message.attachments[0].payload.url
+    response = {
+      attachment: {
+        type: 'template',
+        payload: {
+          template_type: 'generic',
+          elements: [{
+            title: 'Is this the right picture?',
+            subtitle: 'Tap a button to answer.',
+            image_url: attachment_url,
+            buttons: [
+              {
+                type: 'postback',
+                title: 'Yes!',
+                payload: 'yes'
+              },
+              {
+                type: 'postback',
+                title: 'No!',
+                payload: 'no'
+              }
+            ]
+          }]
+        }
+      }
     }
   }
 
